@@ -1,76 +1,69 @@
-import puppeteer from 'puppeteer';
-import { productos } from './productos.js';;
+import { productos } from './productos.js';
+import { obtenerHoraActual } from './obtenerHora.js';
+import { encontrarPrecio } from './encontrarPrecio.js';
 
 //*-------------------------------------
 const tiempoRetardo = 2000;
 //*-------------------------------------
 
-async function encontrarPrecio(url) {
-  const browser = await puppeteer.launch({ headless: "new" });
-  const page = await browser.newPage();
-
-  // Emula un User-Agent personalizado para hacer que la solicitud se parezca a un navegador real
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36');
-  await page.goto(url, { waitUntil: 'domcontentloaded' });
-
-  const html = await page.content();
-
-  await browser.close();
-
-  function encontrarHighPrice(texto) {
-    const regex = /"price":"(\d+(\.\d+)?)"/
-    const coincidencia = texto.match(regex);
-
-    if (coincidencia && coincidencia[1]) {
-      return coincidencia[1];
-    } else {
-      return null;
-    }
-  }
-  //console.log(html)
-
-  const precio = encontrarHighPrice(html);
-  if (precio !== null) {
-    return precio
-  } else {
-    return null
-  }
-}
-
-const iterarProductos = async () => {
-  let index = 0;
+async function iterarProductos() {
+ 
+  let indexProduct = 0;
 
   const iterarConRetardo = async () => {
-    if (index < productos.length) {
-      const producto = productos[index];
+    if (indexProduct < productos.length) {
+     
+      const producto = productos[indexProduct];
 
       try {
+       
         const precioActual = await encontrarPrecio(producto.urlOriginal);
-        //console.log(precioActual);
+        // console.log(precioActual);
+        
         const productoTable = {
           Nombre:  producto.nombre.slice(0, 30) ,
           Precio:  precioActual + ' - (' + producto.precioFijado + ')',
           URL_Venta:  producto.urlVenta,
+          URL_Venta_2:  producto.urlVenta2,
           URL_Original: producto.urlOriginal,
         };
-        if (precioActual < producto.precioFijado || precioActual == null) {
-          console.log('\x1b[31mFALLO\x1b[0m ' +  index + 1)
+       
+        if (precioActual > producto.precioFijado) {
+          console.log( obtenerHoraActual() + '\x1b[31m ALERTA DE PRECIO\x1b[0m ' + ' Producto Nº:' + (indexProduct + 1))
           console.table(productoTable);
+        } else {
+          // console.log('\x1b[32mcorrecto\x1b[0m ' + '\x1b[37m' + producto.nombre.slice(0, 30)/*  + '\x1b[0m ' + '\x1b[34m' + producto.urlVenta + '\x1b[0m' */);
         }
-        else {
-          console.log('\x1b[32mcorrecto\x1b[0m ' + '\x1b[37m' + producto.nombre.slice(0, 30)/*  + '\x1b[0m ' + '\x1b[34m' + producto.urlVenta + '\x1b[0m' */);
-        }
+
       } catch (error) {
-        console.error("Error al obtener el precio:", error);
+       
+        const productoTable = {
+          Nombre:  producto.nombre.slice(0, 30) ,
+          URL_Venta:  producto.urlVenta,
+          URL_Venta_2:  producto.urlVenta2,
+          URL_Original: producto.urlOriginal,
+        };
+
+        console.log( obtenerHoraActual() + '\x1b[31m FALLO AL ENCONTRAR EL PRODUCTO\x1b[0m '  + ' Producto Nº:' + (indexProduct + 1))
+        console.table(productoTable);
       }
-      index++;
+      indexProduct++;
       setTimeout(iterarConRetardo, tiempoRetardo);
     }
     else {
-      iterarProductos();
+      // Se reinicia el ciclo
+      let numeroCiclo = 1;
+      console.log( `Ciclo Nº${numeroCiclo} finalizado / ` + obtenerHoraActual())
+      numeroCiclo++;
+      iterarProductos(); 
     }
   };
-  iterarConRetardo();
+  iterarConRetardo(); 
 };
+
+
+
+
+
 
 iterarProductos()
