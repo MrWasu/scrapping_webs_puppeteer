@@ -1,0 +1,14 @@
+{
+  "type": "module",
+  "name": "nombre-de-tu-proyecto",
+  "version": "1.0.0",
+  "dependencies": {
+    "@extractus/article-extractor": "^8.0.3",
+    "article-extractor": "^1.0.2",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "express": "^4.18.2",
+    "jsdom": "^22.1.0",
+    "puppeteer": "^21.4.1"
+  }
+}
